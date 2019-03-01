@@ -61,7 +61,7 @@ def train(args):
     n_embed = len(inputs.vocab)
     d_out = len(answers.vocab)
 
-    model = DAN(n_embed=n_embed , d_embed=100, d_hidden=256, d_out=d_out, dp=0.2, embed_weight=inputs.vocab.vectors)
+    model = DAN(n_embed=n_embed , d_embed=args.d_embed, d_hidden=256, d_out=d_out, dp=0.2, embed_weight=inputs.vocab.vectors)
     model.to(device)
 
     opt = optim.Adam(model.parameters(), lr=args.lr)
