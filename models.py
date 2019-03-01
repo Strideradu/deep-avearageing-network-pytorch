@@ -2,16 +2,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class DAN(nn.Module):
 
     def __init__(self,
                  n_embed=10000,
                  d_embed=300,
-                 d_hidden = 256,
-                 d_out = 2,
-                 dp = 0.2,
-                 embed_weight = None):
-
+                 d_hidden=256,
+                 d_out=2,
+                 dp=0.2,
+                 embed_weight=None):
         super(DAN, self).__init__()
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -21,6 +21,7 @@ class DAN(nn.Module):
         if embed_weight is not None:
             # embed_weight = inputs.vocab.vectors
             self.embed.weight.data.copy_(embed_weight)
+            self.embed.weight.requires_grad = False
 
         self.dropout1 = nn.Dropout(dp)
         self.bn1 = nn.BatchNorm1d(d_embed)
@@ -28,7 +29,6 @@ class DAN(nn.Module):
         self.dropout2 = nn.Dropout(dp)
         self.bn2 = nn.BatchNorm1d(d_hidden)
         self.fc2 = nn.Linear(d_hidden, d_out)
-
 
     def forward(self, batch):
         text = batch.text
