@@ -18,7 +18,7 @@ class DAN(nn.Module):
 
         self.embed = nn.Embedding(n_embed, d_embed)
 
-        if embed_weight:
+        if embed_weight is not None:
             # embed_weight = inputs.vocab.vectors
             self.embed.weight.data.copy_(embed_weight)
 
@@ -34,9 +34,9 @@ class DAN(nn.Module):
         text = batch.text
         label = batch.label
 
-        x = self.embed(text, label)
+        x = self.embed(text)
 
-        x = x.mean(dim=1)
+        x = x.mean(dim=0)
 
         x = self.dropout1(x)
         x = self.bn1(x)

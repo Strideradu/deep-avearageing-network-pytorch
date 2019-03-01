@@ -19,15 +19,15 @@ from models import *
 criterion = nn.CrossEntropyLoss()
 
 def get_args():
-    parser = ArgumentParser(description='PyTorch/torchtext SNLI example')
-    parser.add_argument('--path', type=int, default=50)
+    parser = ArgumentParser(description='PyTorch/torchtext IMDB DAN example')
+    parser.add_argument('path', type=str)
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--d_embed', type=int, default=100)
     parser.add_argument('--log_every', type=int, default=50)
     parser.add_argument('--lr', type=float, default=.001)
-    parser.add_argument('--dev_every', type=int, default=1000)
-    parser.add_argument('--save_every', type=int, default=1000)
+    parser.add_argument('--dev_every', type=int, default=100)
+    parser.add_argument('--save_every', type=int, default=100)
     parser.add_argument('--dp_ratio', type=int, default=0.2)
     parser.add_argument('--train_embed', action='store_false', dest='fix_emb')
     parser.add_argument('--gpu', type=int, default=0)
@@ -97,7 +97,7 @@ def train(args):
             loss.backward();
             opt.step()
 
-            train_loss += loss.item()
+            train_loss += loss.data.cpu().numpy()
             print('\r {:4d} | {:4d}/{} | {:.4f} | {:.4f} |'.format(
                 epoch,  args.batch_size * (batch_idx + 1), len(train), loss.item(),
                                              train_loss / (iterations - last_val_iter)), end='')
@@ -129,7 +129,7 @@ def evaluate(iter, model):
         for batch_idx, batch in enumerate(iter):
             answer = model(batch)
             n_correct += (torch.max(answer, 1)[1].view(batch.label.size()) == batch.label).sum().item()
-            n += batch.shape[0]
+            n += answer.shape[0]
             loss = criterion(answer, batch.label)
             losses.append(loss.data.cpu().numpy())
     acc = 100. * n_correct / n
