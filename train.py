@@ -44,7 +44,7 @@ def train(args):
 
     train_path = os.path.join(args.path, 'train')
     test_path = os.path.join(args.path, 'test')
-    valid_path = os.path.join(args.path, 'valid')
+    valid_path = os.path.join(args.path, 'val')
 
     train = datasets.IMDB(train_path, inputs, answers)
     test = datasets.IMDB(test_path, inputs, answers)
@@ -61,7 +61,7 @@ def train(args):
     n_embed = len(inputs.vocab)
     d_out = len(answers.vocab)
 
-    model = DAN(n_embed=n_embed , d_embed=300, d_hidden=256, d_out=d_out, dp=0.2, embed_weight=inputs.vocab.vectors)
+    model = DAN(n_embed=n_embed , d_embed=100, d_hidden=256, d_out=d_out, dp=0.2, embed_weight=inputs.vocab.vectors)
     model.to(device)
 
     opt = optim.Adam(model.parameters(), lr=args.lr)
@@ -81,8 +81,8 @@ def train(args):
     start = time.time()
     for epoch in range(args.epochs):
         train_iter.init_epoch()
-        n_correct, n_total = 0, 0
-        train_loss = []
+        n_correct, n_total, train_loss = 0, 0, 0
+        last_val_iter = 0
         for batch_idx, batch in enumerate(train_iter):
             # switch model to training mode, clear gradient accumulators
             model.train();
@@ -97,7 +97,7 @@ def train(args):
             loss.backward();
             opt.step()
 
-            train_loss += loss.data.cpu().numpy()
+            train_loss += loss.item()
             print('\r {:4d} | {:4d}/{} | {:.4f} | {:.4f} |'.format(
                 epoch,  args.batch_size * (batch_idx + 1), len(train), loss.item(),
                                              train_loss / (iterations - last_val_iter)), end='')
@@ -110,31 +110,30 @@ def train(args):
                     torch.save(model.state_dict(), args.save_path)
                     _save_ckp = '*'
 
-                    print(
-                        ' {:.4f} | {:.4f} | {:.4f} | {:.2f} | {:4s} |'.format(
-                            val_loss, acc, best_acc, (time.time() - start) / 60,
-                            _save_ckp))
+                print(
+                    ' {:.4f} | {:.4f} | {:.4f} | {:.2f} | {:4s} |'.format(
+                        val_loss, acc, best_acc, (time.time() - start) / 60,
+                        _save_ckp))
 
-                    train_loss = 0
-                    last_val_iter = iterations
+                train_loss = 0
+                last_val_iter = iterations
 
-def evaluate(iter, model):
+def evaluate(loader, model):
     model.eval()
-    iter.init_epoch()
+    loader.init_epoch()
 
     # calculate accuracy on validation set
     n_correct, n = 0, 0
     losses = []
     with torch.no_grad():
-        for batch_idx, batch in enumerate(iter):
+        for batch_idx, batch in enumerate(loader):
             answer = model(batch)
             n_correct += (torch.max(answer, 1)[1].view(batch.label.size()) == batch.label).sum().item()
             n += answer.shape[0]
             loss = criterion(answer, batch.label)
             losses.append(loss.data.cpu().numpy())
     acc = 100. * n_correct / n
-    loss = np.concatenate(losses)
-    loss = loss.mean()
+    loss = np.mean(losses)
 
     return acc, loss
 
