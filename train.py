@@ -12,29 +12,37 @@ from torchtext import data
 from torchtext import datasets
 
 import os
+import sys
 from argparse import ArgumentParser
 
 from models import *
 
 criterion = nn.CrossEntropyLoss()
 
+
 def get_args():
     parser = ArgumentParser(description='PyTorch/torchtext IMDB DAN example')
-    parser.add_argument('path', type=str)
-    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('path', type=str, help = 'path to the IMDB dataset should have ')
+    parser.add_argument('--epochs', type=int, default=50, help = 'epochs')
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--d_embed', type=int, default=100)
-    parser.add_argument('--log_every', type=int, default=50)
     parser.add_argument('--lr', type=float, default=.001)
     parser.add_argument('--dev_every', type=int, default=100)
-    parser.add_argument('--save_every', type=int, default=100)
     parser.add_argument('--dp_ratio', type=int, default=0.2)
-    parser.add_argument('--train_embed', action='store_false', dest='fix_emb')
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--save_path', type=str, default='results')
-    parser.add_argument('--word_vectors', type=str, default='glove.6B.100d')
-    args = parser.parse_args()
+    parser.add_argument('--save_path', type=str, default='results', help='path to save the model')
+    parser.add_argument('--word_vectors', type=str,
+                        default='glove.6B.100d', help = 'support the following choices: charngram.100d fasttext.en.300d fasttext.simple.300d glove.42B.300d glove.840B.300d glove.twitter.27B.25d glove.twitter.27B.50d glove.twitter.27B.100d glove.twitter.27B.200d glove.6B.50d glove.6B.100d glove.6B.200d glove.6B.300d')
+
+    try:
+        args = parser.parse_args()
+
+    except:
+        parser.print_help()
+        sys.exit(1)
+
     return args
+
 
 def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -61,7 +69,8 @@ def train(args):
     n_embed = len(inputs.vocab)
     d_out = len(answers.vocab)
 
-    model = DAN(n_embed=n_embed , d_embed=args.d_embed, d_hidden=256, d_out=d_out, dp=0.2, embed_weight=inputs.vocab.vectors)
+    model = DAN(n_embed=n_embed, d_embed=args.d_embed, d_hidden=256, d_out=d_out, dp=0.2,
+                embed_weight=inputs.vocab.vectors)
     model.to(device)
 
     opt = optim.Adam(model.parameters(), lr=args.lr)
@@ -99,8 +108,8 @@ def train(args):
 
             train_loss += loss.item()
             print('\r {:4d} | {:4d}/{} | {:.4f} | {:.4f} |'.format(
-                epoch,  args.batch_size * (batch_idx + 1), len(train), loss.item(),
-                                             train_loss / (iterations - last_val_iter)), end='')
+                epoch, args.batch_size * (batch_idx + 1), len(train), loss.item(),
+                       train_loss / (iterations - last_val_iter)), end='')
 
             if iterations > 0 and iterations % args.dev_every == 0:
                 acc, val_loss = evaluate(dev_iter, model)
@@ -117,6 +126,7 @@ def train(args):
 
                 train_loss = 0
                 last_val_iter = iterations
+
 
 def evaluate(loader, model):
     model.eval()
@@ -136,6 +146,7 @@ def evaluate(loader, model):
     loss = np.mean(losses)
 
     return acc, loss
+
 
 if __name__ == '__main__':
     args = get_args()
