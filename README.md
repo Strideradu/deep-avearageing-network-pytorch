@@ -1,4 +1,4 @@
-# Deep Averaging Networks (DAN)
+# Deep Averaging Networks (DAN) in PyTorch
 pytorch implementation code for model described in
 <http://cs.umd.edu/~miyyer/pubs/2015_acl_dan.pdf> along with IMDB dataset (<http://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz>). 
 feel free to email me at dunan@msu.edu with any comments/problems/questions/suggestions.
